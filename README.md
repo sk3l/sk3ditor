@@ -1,4 +1,4 @@
-# sk3ditor - Dockerized software dev multitool 
+# sk3ditor - Dockerized Development Multitool 
 The `sk3ditor` is a handy, dandy coding Swiss army knife. It's intended to provide a seamless, hassle-free development experience. 
 
 **Features:**

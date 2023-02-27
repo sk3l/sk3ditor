@@ -9,18 +9,10 @@ ARG   dev_groups=adm,sudo
 ARG   dev_shell=/bin/bash
 
 ##
-# Parameterize the development account's editor
-ARG   editor_name=nvim
-ARG   editor_path=/usr/local/sbin
-ARG   editor_fqn=$editor_path/$editor_name
-ARG   editor_url=https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
-
-##
 # Define image packages
 ENV   packages="cmake               \
                 build-essential     \
                 coreutils           \
-                fuse                \
                 git                 \
                 golang              \
                 npm                 \
@@ -35,10 +27,17 @@ ENV   packages="cmake               \
 RUN apt-get update && apt-get install -y --force-yes $packages
 
 ##
-# Install editor
-RUN mkdir -p $editor_path           && \
-    wget -O $editor_fqn $editor_url && \
-    chmod +x $editor_fqn
+# Configure and install Neovim from nightly app image
+ENV   nvim_install_path=/opt/nvim
+ENV   nvim_exe_path=$nvim_install_path/squashfs-root/usr/bin/nvim
+ENV   nvim_source_url=https://github.com/neovim/neovim/releases/download/nightly/nvim.appimage
+
+RUN mkdir $nvim_install_path                        && \
+    cd $nvim_install_path                           && \
+    wget -O ./appImage $nvim_source_url             && \
+    chmod +x $nvim_install_path/appImage            && \
+    $nvim_install_path/appImage --appimage-extract  && \
+    ln -s $nvim_exe_path /usr/local/sbin/nvim
 
 ##
 # Setup the developer account
@@ -54,29 +53,23 @@ ENV shell_rc_url=https://raw.githubusercontent.com/sk3l/sk3lshell/master/dot-fil
 RUN wget -O $HOME/.bashrc               $shell_rc_url/.bashrc
 RUN wget -O $HOME/.bashrc_local_ubuntu  $shell_rc_url/.bashrc_local_ubuntu
 
-RUN echo "export EDITOR=$editor_fqn" >> $HOME/.bashrc
+RUN echo "export EDITOR=/usr/local/sbin/nvim" >> $HOME/.bashrc
 
 ##
-# Install developer's editor conf
+# Install Neovim configuration
 # TODO - make plug-able by `RUN source <some_shell_script>`
-ENV editor_conf_url=https://raw.githubusercontent.com/sk3l/vim-conf/master/
-ENV editor_plugin_url=https://github.com/wbthomason/packer.nvim
-
 ENV editor_conf_dir=/home/$dev_user/.config/nvim
-ENV editor_code_dir=/home/$dev_user/.config/nvim/lua
+ENV editor_code_dir=$editor_conf_dir/lua
 ENV editor_data_dir=/home/$dev_user/.local/share/nvim
 
-RUN mkdir -p $editor_conf_dir
-RUN mkdir -p $editor_code_dir
-RUN mkdir -p $editor_data_dir
+COPY --chown=$dev_user:$dev_user nvim/conf/init.vim     $editor_conf_dir/init.vim
+COPY --chown=$dev_user:$dev_user nvim/conf/ale.vim      $editor_conf_dir/ale.vim
+COPY --chown=$dev_user:$dev_user nvim/conf/nerdtree.vim $editor_conf_dir/nerdtree.vim
+COPY --chown=$dev_user:$dev_user nvim/code/plugins.lua  $editor_code_dir/plugins.lua
 
-# TODO - shift the editor files out of this repo
-COPY nvim_init_vim      /home/$dev_user/.config/nvim/init.vim
-COPY nvim_plugins_lua   /home/$dev_user/.config/nvim/lua/plugins.lua
-
-RUN git clone --depth 1 $editor_plugin_url $editor_data_dir/site/pack/packer/start/packer.nvim
-RUN wget -O $HOME/.config/nvim/ale      $editor_conf_url/conf/vimrc_ale
-RUN wget -O $HOME/.config/nvim/nerdtree $editor_conf_url/conf/vimrc_nerdtree
+##
+# Bootstrap Neovim's packages via packer.nvim
+RUN nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
 
 ##
 # Replace regex patterns in any config files, e.g.

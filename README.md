@@ -11,6 +11,8 @@ The `sk3ditor` is a handy, dandy coding Swiss army knife. It's intended to provi
 - configurable 
   - customize user name, editor, shell, etc
 
+The default editor program bundled with the image (along with my config settings) is [Neovim](https://neovim.io/).
+
 ## Build it
 ```
 make build
@@ -22,3 +24,11 @@ make run
 ```
 
 See the top section of `sk3ditor.dockerfile` for a list of runtime parameters
+
+## TODO
+- install packages supporting linting/fixing via Neovim ALE LSP
+ - Python3 packages
+ - Javascript/Node packages
+ - Gopls
+ - Bash-related linter/fixers
+ - English language linters/checkers

@@ -1,32 +1,20 @@
-" !!! MAS !!! uncomment below to import existing .vimrc 
-"
- set runtimepath^=~/.vim runtimepath+=~/.vim/after
- let &packpath = &runtimepath
-" source ~/.vimrc
-"
-
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Plugins (managed by Vundle)
-"
-set nocompatible              " be iMproved, required
-filetype off                  " required
 
 syntax on
 filetype plugin indent on
 
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
-" Formatting, etc 
+" Formatting, etc
 "
 set number
 
 set nocompatible
 
-colorscheme duskfox 
+" colorscheme duskfox
 
 " Backup file settings
-set nobackup       
-set nowritebackup  
-set noswapfile  
+set nobackup
+set nowritebackup
+set noswapfile
 
 " Tab settings
 "set backspace=3
@@ -74,8 +62,9 @@ au BufNewFile *.html 0r ~/.vim/templates/skeleton.html
 
 """""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 " Plugins
-"
+" Managed via packer.nvim
+" https://github.com/wbthomason/packer.nvim
 :lua require('plugins')
 
-source ~/.config/nvim/nerdtree
-source ~/.config/nvim/ale
+source ~/.config/nvim/ale.vim
+source ~/.config/nvim/nerdtree.vim

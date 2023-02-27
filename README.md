@@ -1,5 +1,9 @@
-# sk3ditor - Dockerized Development Multitool 
-The `sk3ditor` is a handy, dandy coding Swiss army knife. It's intended to provide a seamless, hassle-free development experience. 
+<h1 align="center">
+  <img src="https://user-images.githubusercontent.com/4662876/221683471-d472d9c0-7d19-4e46-a7fd-44dcfd59ebd9.png" alt="sk3ditor">
+     <div><strong>sk3ditor</strong></div>
+</h1>
+
+`sk3ditor` is a handy, dandy coding Swiss army knife. It's intended to provide a seamless, hassle-free development experience. Conceptually, `sk3fditor` is a collection of coding tools, along with the Neovim editor, bundled inside a Docker container.
 
 **Features:**
 - portable

@@ -3,29 +3,31 @@ MINOR?=1
 
 #VERSION=$(MAJOR).$(MINOR)
 
-APP_NAME:= sk3ditor
-DEV_USER?= $(shell echo "${USER}")
 # Our docker Hub account name
 # HUB_NAMESPACE = "<hub_name>"
 
-# location of Dockerfiles
-# DOCKER_FILE_DIR = "dockerfiles"
+APP_NAME:= sk3ditor
+
+# Location of Dockerfiles
 DOCKERFILE:= "sk3ditor.dockerfile"
 
 IMAGE_NAME:= "${APP_NAME}"
 # CONT_NAME:= "${APP_PREFIX}-${COMPONENT_NAME}"
 
-
 CUR_DIR = $(shell echo "${PWD}")
 MKFILE_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-# BT_SVC_INI?=--build-arg "app_cfg_file=bitomb.ini"
-#BT_DB_MNT?=""
-#ifeq (${DEBUG}, 1)
-#    BT_DB_MNT=-v "${MKFILE_DIR}/code:/svc/bitomb"
-#    BT_SVC_INI=--build-arg "app_cfg_file=development.ini"
-#endif
-WORK_DIR?=${MKFILE_DIR}
+# Assign development user name passed to container
+DEV_USER?= $(shell echo "${USER}")
+DEV_USER_OPTS:=--build-arg dev_user=${DEV_USER}
+
+# Establish bind mount between host and container
+# (default=nothing shared)
+MNT_OPTS:=-v :/home/${DEV_USER}/code
+PROJ_DIR_VAR:=PROJ_DIR
+ifdef $(PROJ_DIR_VAR)
+    MNT_OPTS=-v ${PROJ_DIR}:/home/${DEV_USER}/code:shared
+endif
 
 # HELP
 # This will output the help for each task
@@ -40,11 +42,10 @@ help: ## This help.
 # DOCKER TASKS
 .PHONY: build
 build: ## Build the container image
-	#docker pull python:3.7-buster
-	@docker build                       \
-		--tag ${IMAGE_NAME}             \
-		--build-arg dev_user=${DEV_USER}\
-		-f ${DOCKERFILE}                \
+	@docker build           \
+		--tag ${IMAGE_NAME} \
+		-f ${DOCKERFILE}    \
+		${DEV_USER_OPTS}    \
 		.
 
 #.PHONY: create
@@ -56,15 +57,12 @@ build: ## Build the container image
 
 .PHONY: run
 run: ## Run container on port configured in `config.env`
-	@docker run                                 \
-		--rm                                    \
-		-i                                      \
-		--tty                                   \
-		-v "${WORK_DIR}:/home${DEV_NAME}/code"  \
-	    ${IMAGE_NAME}
-
-	#./sk3ditor.sh
-#	docker start ${CONT_NAME}
+	@docker run      \
+		--rm         \
+		-i           \
+		--tty        \
+		${MNT_OPTS}  \
+		${IMAGE_NAME}
 
 #.PHONY: start
 #start: ## Run container on port configured in `config.env`

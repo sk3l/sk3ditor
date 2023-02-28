@@ -68,3 +68,4 @@ au BufNewFile *.html 0r ~/.vim/templates/skeleton.html
 
 source ~/.config/nvim/ale.vim
 source ~/.config/nvim/nerdtree.vim
+source ~/.config/nvim/colors.vim

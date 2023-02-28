@@ -19,6 +19,7 @@ ENV   packages="cmake               \
                 python3             \
                 python3-pip         \
                 python3-setuptools  \
+                shellcheck          \
                 sudo                \
                 wget"
 
@@ -45,6 +46,7 @@ RUN useradd -G $dev_groups -m -s /bin/bash $dev_user
 RUN echo "$dev_user   ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/sudo-$dev_user
 
 USER $dev_user
+RUN mkdir /home/$dev_user/code
 
 ##
 # Install developer's shell resource files
@@ -70,6 +72,21 @@ COPY --chown=$dev_user:$dev_user nvim/code/plugins.lua  $editor_code_dir/plugins
 ##
 # Bootstrap Neovim's packages via packer.nvim
 RUN nvim --headless -c 'autocmd User PackerComplete quitall' -c 'PackerSync'
+
+RUN echo "colorscheme duskfox" > $editor_conf_dir/colors.vim
+
+##
+# Setup Bash-related development environment
+RUN pip3 install --user bashate
+
+##
+# Setup Python-related development environment
+ENV python_tools="python-lsp-server pylint flake8 jedi mypy black isort"
+RUN pip3 install --user $python_tools
+
+##
+# Setup Go-related development environment
+RUN go install golang.org/x/tools/gopls@latest
 
 ##
 # Replace regex patterns in any config files, e.g.

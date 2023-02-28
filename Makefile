@@ -3,8 +3,8 @@ MINOR?=1
 
 #VERSION=$(MAJOR).$(MINOR)
 
-APP_NAME = sk3ditor
-
+APP_NAME:= sk3ditor
+DEV_USER?= $(shell echo "${USER}")
 # Our docker Hub account name
 # HUB_NAMESPACE = "<hub_name>"
 
@@ -25,6 +25,7 @@ MKFILE_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 #    BT_DB_MNT=-v "${MKFILE_DIR}/code:/svc/bitomb"
 #    BT_SVC_INI=--build-arg "app_cfg_file=development.ini"
 #endif
+WORK_DIR?=${MKFILE_DIR}
 
 # HELP
 # This will output the help for each task
@@ -40,7 +41,11 @@ help: ## This help.
 .PHONY: build
 build: ## Build the container image
 	#docker pull python:3.7-buster
-	docker build --tag ${IMAGE_NAME} -f ${DOCKERFILE}  .
+	@docker build                       \
+		--tag ${IMAGE_NAME}             \
+		--build-arg dev_user=${DEV_USER}\
+		-f ${DOCKERFILE}                \
+		.
 
 #.PHONY: create
 #create: ## Create the container instance
@@ -51,7 +56,14 @@ build: ## Build the container image
 
 .PHONY: run
 run: ## Run container on port configured in `config.env`
-	 ./sk3ditor.sh
+	@docker run                                 \
+		--rm                                    \
+		-i                                      \
+		--tty                                   \
+		-v "${WORK_DIR}:/home${DEV_NAME}/code"  \
+	    ${IMAGE_NAME}
+
+	#./sk3ditor.sh
 #	docker start ${CONT_NAME}
 
 #.PHONY: start

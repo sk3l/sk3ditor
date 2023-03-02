@@ -89,6 +89,12 @@ RUN pip3 install --user $python_tools
 RUN go install golang.org/x/tools/gopls@latest
 
 ##
+# Setup node.js version manager (NVM) and related node packages
+SHELL ["/bin/bash", "-c"]
+RUN wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
+RUN source $HOME/.nvm/nvm.sh && nvm install node
+
+##
 # Replace regex patterns in any config files, e.g.
 #RUN sed -i {s/\$\{db_host\}/$db_host/}          /svc/bitomb/$app_cfg_file
 

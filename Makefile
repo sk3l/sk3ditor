@@ -78,7 +78,12 @@ run: ## Run container on port configured in `config.env`
 
 .PHONY: rmi
 rmi: ## Remove a container image
-	docker rmi ${IMAGE_NAME}
+	@image_hash=$(shell docker images -q ${IMAGE_NAME}); \
+	if [ -n "$$image_hash" ]; then \
+		docker rmi ${IMAGE_NAME}; \
+	else \
+		echo "No image ${IMAGE_NAME} defined"; \
+	fi
 
 .PHONY: destroy
 destroy: rm rmi

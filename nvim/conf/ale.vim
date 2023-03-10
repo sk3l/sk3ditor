@@ -32,6 +32,10 @@ let g:ale_sql_sqlformat_options="-r"
 " flake8
 let g:ale_python_flake8_options = '--max-line-length=100'
 
+" LanguageTool
+let b:ale_languagetool_executable = 'java'
+let g:ale_languagetool_options="-jar /opt/languagetool/languagetool-commandline.jar -l en-US"
+
 set omnifunc=ale#completion#OmniFunc
 
 " pylsp = python-lsp-server package
@@ -40,8 +44,10 @@ let g:ale_linters = {
 \   'cpp': ['clang', 'clangcheck', 'clangd'],
 \   'go': ['gopls'],
 \   'javascript': ['eslint'],
+\   'markdown': ['languagetool', 'proselint', 'writegood'],
 \   'python': ['flake8', 'pylint', 'pylsp', 'mypy'],
-\   'sh' : ['bashate', 'cspell', 'language_server', 'shell', 'shellcheck']
+\   'sh' : ['bashate', 'cspell', 'language_server', 'shell', 'shellcheck'],
+\   'txt': ['languagetool', 'proselint', 'writegood']
 \}
 
 let g:ale_fixers = {

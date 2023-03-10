@@ -10,17 +10,19 @@ ARG   dev_shell=/bin/bash
 
 ##
 # Define image packages
-ENV   packages="cmake               \
-                build-essential     \
-                coreutils           \
-                git                 \
-                golang              \
-                npm                 \
-                python3             \
-                python3-pip         \
-                python3-setuptools  \
-                shellcheck          \
-                sudo                \
+ENV   packages="cmake                   \
+                build-essential         \
+                coreutils               \
+                curl                    \
+                default-jre-headless    \
+                git                     \
+                golang                  \
+                npm                     \
+                python3                 \
+                python3-pip             \
+                python3-setuptools      \
+                shellcheck              \
+                sudo                    \
                 wget"
 
 ##
@@ -41,12 +43,21 @@ RUN mkdir $nvim_install_path                        && \
     ln -s $nvim_exe_path /usr/local/sbin/nvim
 
 ##
+# Install  English-language related development environment
+RUN cd /opt && \
+    curl -L https://raw.githubusercontent.com/languagetool-org/languagetool/master/install.sh | bash
+RUN ln -s $(ls -d /opt/LanguageTool*) /opt/languagetool
+
+##
 # Setup the developer account
 RUN useradd -G $dev_groups -m -s /bin/bash $dev_user
 RUN echo "$dev_user   ALL=(ALL:ALL) NOPASSWD: ALL" > /etc/sudoers.d/sudo-$dev_user
 
+##
+# Pivot to setup of development user
 USER $dev_user
-RUN mkdir /home/$dev_user/code
+WORKDIR /home/$dev_user
+RUN mkdir code
 
 ##
 # Install developer's shell resource files
@@ -81,7 +92,7 @@ RUN pip3 install --user bashate
 
 ##
 # Setup Python-related development environment
-ENV python_tools="python-lsp-server pylint flake8 jedi mypy black isort"
+ENV python_tools="python-lsp-server pylint flake8 jedi mypy black isort proselint"
 RUN pip3 install --user $python_tools
 
 ##
@@ -93,12 +104,11 @@ RUN go install golang.org/x/tools/gopls@latest
 SHELL ["/bin/bash", "-c"]
 RUN wget -qO- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.3/install.sh | bash
 RUN source $HOME/.nvm/nvm.sh && nvm install node
+RUN npm install write-good
 
 ##
 # Replace regex patterns in any config files, e.g.
 #RUN sed -i {s/\$\{db_host\}/$db_host/}          /svc/bitomb/$app_cfg_file
-
-WORKDIR /home/$dev_user
 
 ##
 # Uncomment below if running something aside from $SHELL

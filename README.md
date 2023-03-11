@@ -12,19 +12,21 @@
   - run it without Docker knowledge using GNU MAKE commands
 - smart
   - eliminates tracking differing package names for the package manager serving your host system
-- configurable 
+- configurable
   - customize user name, editor, shell, etc
 
 The default editor program bundled with the image (along with my config settings) is [Neovim](https://neovim.io/).
 
-## Build it
+## Building sk3ditor
+Build the sk3ditor image (tagged `sk3l/sk3ditor:latest`)
 ```
 make build
 ```
 
-## Run it
+## Running sk3ditor
+Run sk3ditor with a shared mount between host `/home/kilroy/code` and `/home/kilroy/code` in the container
 ```
-make run
+CODE_DIR=/home/kilroy/code make run
 ```
 
 See the top section of `sk3ditor.dockerfile` for a list of runtime parameters

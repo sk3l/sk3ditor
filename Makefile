@@ -4,26 +4,16 @@
 # Our docker Hub account name
 # HUB_NAMESPACE = "<hub_name>"
 
-##
-# Application information
-MAJOR?= 1
-MINOR?= 0
-APP_AUTHOR:= sk3l
-APP_NAME:= sk3ditor
-APP_VERSION?= latest
-
-##
-# Dockerfile information
-DOCKERFILE:= "sk3ditor.dockerfile"
-DOCKER_REPO:= $(APP_AUTHOR)/$(APP_NAME)
-
-##
-# Image information
-IMAGE_NAME:= "$(APP_AUTHOR)/$(APP_NAME)"
-IMAGE_TAG:= "$(IMAGE_NAME):$(APP_VERSION)"
-
 CUR_DIR = $(shell echo "${PWD}")
 MKFILE_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+
+##
+# Image parameters
+SOURCE:= "sk3ditor.dockerfile"
+AUTHOR:= sk3l
+REPO:=   sk3ditor
+IMAGE:=  $(AUTHOR)/$(REPO)
+TAG?=    latest
 
 # Assign development user name passed to container
 DEV_USER?= $(shell echo "${USER}")
@@ -32,9 +22,9 @@ DEV_USER_OPTS:=--build-arg dev_user=$(DEV_USER)
 # Establish bind mount between host and container
 # (default=nothing shared)
 MNT_OPTS:=-v :/home/$(DEV_USER)/code
-PROJ_DIR_VAR:=PROJ_DIR
-ifdef $(PROJ_DIR_VAR)
-    MNT_OPTS=-v $(PROJ_DIR):/home/$(DEV_USER)/code:shared
+CODE_DIR_VAR:=CODE_DIR
+ifdef $(CODE_DIR_VAR)
+    MNT_OPTS=-v $(CODE_DIR):/home/$(DEV_USER)/code:shared
 endif
 
 # HELP
@@ -47,81 +37,86 @@ help: ## This help.
 
 .DEFAULT_GOAL := help
 
-# DOCKER TASKS
+##
+# Docker rules
+
+##
+# Target handling execution of 'docker build'
 .PHONY: build
-build: ## Build the container image
-	@docker build           \
-		--tag $(IMAGE_TAG)  \
-		-f $(DOCKERFILE)    \
-		$(DEV_USER_OPTS)    \
+build: ## Build the container image for sk3ditor
+	@docker build             \
+		--tag $(IMAGE):$(TAG) \
+		$(DEV_USER_OPTS)      \
+		-f $(SOURCE)          \
 		.
 
-#.PHONY: create
-#create: ## Create the container instance
-#	docker create --name ${CONT_NAME} --network=${BT_NET} --ip=${BT_IP} --publish ${BT_PUB} ${BT_DB_MNT} ${IMAGE_NAME}
-
-#.PHONY: init
-#init: build create
-
-.PHONY: run
-run: ## Run container on port configured in `config.env`
-	@docker run      \
-		--rm         \
-		-i           \
-		--tty        \
-		$(MNT_OPTS)  \
-		$(IMAGE_TAG)
-
-#.PHONY: start
-#start: ## Run container on port configured in `config.env`
-#	docker start ${CONT_NAME}
-
-#.PHONY: stop
-#stop: ## Stop a running container
-#	docker stop ${CONT_NAME}
-
-#.PHONY: rm
-#rm: ## Remove a container
-#	docker rm ${CONT_NAME}
-
-.PHONY: rmi
-rmi: ## Remove a container image
-	@image_hash=$(shell docker images -q $(IMAGE_TAG)); \
-	if [ -n "$$image_hash" ]; then \
-		docker rmi $(IMAGE_TAG); \
-	else \
-		echo "No image $(IMAGE_TAG) defined"; \
+##
+# Target for validating image definition
+.PHONY: check
+check: ## Verify integrity of sk3ditor image
+	@image_hash=$(shell docker images -q $(IMAGE):$(TAG)); \
+	if [ -z "$$image_hash" ]; then \
+	echo "ERROR: couldn't locate image $(IMAGE):$(TAG) (have you run 'make build'?)"; \
+		exit 1; \
 	fi
 
-.PHONY: destroy
-destroy: rm rmi
+##
+# Target for inspecting sk3ditor image tags
+.PHONY: ls
+ls: ## List sk3ditor image inventory
+	@docker images $(IMAGE)
 
-clean: destroy
+##
+# Target handling execution of 'docker run'
+.PHONY: run
+run: check ## Run container instance of sk3ditor
+	@docker run     \
+		--rm        \
+		-i          \
+		--tty       \
+		$(MNT_OPTS) \
+		$(IMAGE):$(TAG)
 
-# ## Full versioned release
-# release: build publish ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to ECR
-#
-# ## Docker publish
-# publish: repo-login publish-latest publish-version ## Publish the `{version}` ans `latest` tagged containers to ECR
-#
-# publish-latest: tag-latest ## Publish the `latest` taged container to ECR
-# 	@echo 'publish latest to $(DOCKER_REPO)'
-# 	docker push $(DOCKER_REPO):latest
-#
-# publish-version: tag-version ## Publish the `{version}` taged container to ECR
-# 	@echo 'publish $(VERSION) to $(DOCKER_REPO)'
-# 	docker push $(DOCKER_REPO):$(VERSION)
-#
-# ## Docker tagging
-# tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
-#
-# tag-latest: ## Generate container `{version}` tag
-# 	@echo 'create tag latest'
-# 	docker tag $(IMAGE_NAME) $(IMAGE_NAME):latest
-#
-# tag-version: ## Generate container `latest` tag
-# 	@echo 'create tag $(VERSION)'
-# 	docker tag $(IMAGE_NAME) $(IMAGE_NAME):$(APP_VERSION)
+##
+# Target handling execution of 'docker rmi'
+.PHONY: rmi
+rmi: check ## Remove the sk3ditor container image
+	@docker rmi $(IMAGE):$(TAG)
 
+clean: rmi
+
+## Full versioned release
+#
+# release: build tag publish ## Build and publish sk3ditor to the container registry
+
+##
+# Targets handling execution of 'docker push'
+# publish: repo-login publish-latest publish-version ## Publish the `{version}` ans `latest` tagged containers to container registry
+#
+# publish-latest: tag-latest ## Publish the `latest` taged container to container registry
+# 	@echo 'Publishing latest to container registry'
+# 	docker push $(IMAGE):latest
+#
+# publish-version: tag-version ## Publish the `{version}` taged container to container registry
+# 	@echo 'Publishing $(IMAGE):$(TAG) to container registry'
+# 	docker push $(IMAGE):$(VERSION)
+
+##
+# Targets handling execution of 'docker tag'
+tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
+
+.PHONY: tag-latest
+tag-latest: check ## Generate container `{version}` tag
+	@docker tag $(IMAGE) $(IMAGE):latest
+	@echo "Tagged version 'latest'"
+
+.PHONY: tag-version
+tag-version: check ## Generate container `latest` tag
+	@git_tag=$(shell git describe --tags --always --abbrev=0 | grep -e "[0-9]\+\.[0-9]\+"); \
+	if [ -z $$git_tag ]; then \
+		echo "ERROR: missing or invalid Git tag (have you run 'git tag'?)"; exit 1; \
+	fi; \
+	docker tag $(IMAGE) $(IMAGE):$$git_tag; \
+	echo "Tagged version $$git_tag"
 # HELPERS
 

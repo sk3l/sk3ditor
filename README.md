@@ -31,9 +31,9 @@ See the top section of `sk3ditor.dockerfile` for a list of runtime parameters
 
 ## TODO
 - install packages supporting linting/fixing via Neovim ALE LSP
-  - Python3 packages
-  - Javascript/Node packages
-  - Gopls
-  - Bash-related linter/fixers
-  - English language linters/checkers
+  - ~Python3 packages~
+  - ~Javascript/Node packages~
+  - ~Gopls~
+  - ~Bash-related linter/fixers~
+  - ~English language linters/checkers~
 - add tests, CI/CD to the Docker image construction

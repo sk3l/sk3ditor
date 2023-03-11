@@ -1,32 +1,40 @@
-MAJOR?=0
-MINOR?=1
-
-#VERSION=$(MAJOR).$(MINOR)
+##
+# Dockerfile for sk3ditor application
 
 # Our docker Hub account name
 # HUB_NAMESPACE = "<hub_name>"
 
+##
+# Application information
+MAJOR?= 1
+MINOR?= 0
+APP_AUTHOR:= sk3l
 APP_NAME:= sk3ditor
+APP_VERSION?= latest
 
-# Location of Dockerfiles
+##
+# Dockerfile information
 DOCKERFILE:= "sk3ditor.dockerfile"
+DOCKER_REPO:= $(APP_AUTHOR)/$(APP_NAME)
 
-IMAGE_NAME:= "${APP_NAME}"
-# CONT_NAME:= "${APP_PREFIX}-${COMPONENT_NAME}"
+##
+# Image information
+IMAGE_NAME:= "$(APP_AUTHOR)/$(APP_NAME)"
+IMAGE_TAG:= "$(IMAGE_NAME):$(APP_VERSION)"
 
 CUR_DIR = $(shell echo "${PWD}")
 MKFILE_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 # Assign development user name passed to container
 DEV_USER?= $(shell echo "${USER}")
-DEV_USER_OPTS:=--build-arg dev_user=${DEV_USER}
+DEV_USER_OPTS:=--build-arg dev_user=$(DEV_USER)
 
 # Establish bind mount between host and container
 # (default=nothing shared)
-MNT_OPTS:=-v :/home/${DEV_USER}/code
+MNT_OPTS:=-v :/home/$(DEV_USER)/code
 PROJ_DIR_VAR:=PROJ_DIR
 ifdef $(PROJ_DIR_VAR)
-    MNT_OPTS=-v ${PROJ_DIR}:/home/${DEV_USER}/code:shared
+    MNT_OPTS=-v $(PROJ_DIR):/home/$(DEV_USER)/code:shared
 endif
 
 # HELP
@@ -43,9 +51,9 @@ help: ## This help.
 .PHONY: build
 build: ## Build the container image
 	@docker build           \
-		--tag ${IMAGE_NAME} \
-		-f ${DOCKERFILE}    \
-		${DEV_USER_OPTS}    \
+		--tag $(IMAGE_TAG)  \
+		-f $(DOCKERFILE)    \
+		$(DEV_USER_OPTS)    \
 		.
 
 #.PHONY: create
@@ -61,8 +69,8 @@ run: ## Run container on port configured in `config.env`
 		--rm         \
 		-i           \
 		--tty        \
-		${MNT_OPTS}  \
-		${IMAGE_NAME}
+		$(MNT_OPTS)  \
+		$(IMAGE_TAG)
 
 #.PHONY: start
 #start: ## Run container on port configured in `config.env`
@@ -78,11 +86,11 @@ run: ## Run container on port configured in `config.env`
 
 .PHONY: rmi
 rmi: ## Remove a container image
-	@image_hash=$(shell docker images -q ${IMAGE_NAME}); \
+	@image_hash=$(shell docker images -q $(IMAGE_TAG)); \
 	if [ -n "$$image_hash" ]; then \
-		docker rmi ${IMAGE_NAME}; \
+		docker rmi $(IMAGE_TAG); \
 	else \
-		echo "No image ${IMAGE_NAME} defined"; \
+		echo "No image $(IMAGE_TAG) defined"; \
 	fi
 
 .PHONY: destroy
@@ -90,29 +98,30 @@ destroy: rm rmi
 
 clean: destroy
 
-#release: build-nc publish ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to ECR
-
-## Docker publish
-#publish: repo-login publish-latest publish-version ## Publish the `{version}` ans `latest` tagged containers to ECR
+# ## Full versioned release
+# release: build publish ## Make a release by building and publishing the `{version}` ans `latest` tagged containers to ECR
 #
-#publish-latest: tag-latest ## Publish the `latest` taged container to ECR
-#	@echo 'publish latest to $(DOCKER_REPO)'
-#	docker push $(DOCKER_REPO)/$(APP_NAME):latest
+# ## Docker publish
+# publish: repo-login publish-latest publish-version ## Publish the `{version}` ans `latest` tagged containers to ECR
 #
-#publish-version: tag-version ## Publish the `{version}` taged container to ECR
-#	@echo 'publish $(VERSION) to $(DOCKER_REPO)'
-#	docker push $(DOCKER_REPO)/$(APP_NAME):$(VERSION)
+# publish-latest: tag-latest ## Publish the `latest` taged container to ECR
+# 	@echo 'publish latest to $(DOCKER_REPO)'
+# 	docker push $(DOCKER_REPO):latest
 #
-## Docker tagging
-#tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
+# publish-version: tag-version ## Publish the `{version}` taged container to ECR
+# 	@echo 'publish $(VERSION) to $(DOCKER_REPO)'
+# 	docker push $(DOCKER_REPO):$(VERSION)
 #
-#tag-latest: ## Generate container `{version}` tag
-#	@echo 'create tag latest'
-#	docker tag $(APP_NAME) $(DOCKER_REPO)/$(APP_NAME):latest
+# ## Docker tagging
+# tag: tag-latest tag-version ## Generate container tags for the `{version}` ans `latest` tags
 #
-#tag-version: ## Generate container `latest` tag
-#	@echo 'create tag $(VERSION)'
-#	docker tag $(APP_NAME) $(DOCKER_REPO)/$(APP_NAME):$(VERSION)
+# tag-latest: ## Generate container `{version}` tag
+# 	@echo 'create tag latest'
+# 	docker tag $(IMAGE_NAME) $(IMAGE_NAME):latest
+#
+# tag-version: ## Generate container `latest` tag
+# 	@echo 'create tag $(VERSION)'
+# 	docker tag $(IMAGE_NAME) $(IMAGE_NAME):$(APP_VERSION)
 
 # HELPERS
 

@@ -87,19 +87,19 @@ clean: rmi
 
 ## Full versioned release
 #
-# release: build tag publish ## Build and publish sk3ditor to the container registry
+release: build tag publish ## Build and publish sk3ditor to the container registry
 
 ##
 # Targets handling execution of 'docker push'
-# publish: repo-login publish-latest publish-version ## Publish the `{version}` ans `latest` tagged containers to container registry
-#
-# publish-latest: tag-latest ## Publish the `latest` taged container to container registry
-# 	@echo 'Publishing latest to container registry'
-# 	docker push $(IMAGE):latest
-#
-# publish-version: tag-version ## Publish the `{version}` taged container to container registry
-# 	@echo 'Publishing $(IMAGE):$(TAG) to container registry'
-# 	docker push $(IMAGE):$(VERSION)
+publish: login check publish-latest publish-version ## Publish to container registry
+
+publish-latest: tag-latest ## Publish the `latest` taged container to container registry
+	@echo 'Publishing latest to container registry'
+	docker push $(IMAGE):latest
+
+publish-version: tag-version ## Publish the `{version}` taged container to container registry
+	@echo 'Publishing $(IMAGE):$(TAG) to container registry'
+	docker push $(IMAGE):$(TAG)
 
 ##
 # Targets handling execution of 'docker tag'
@@ -118,5 +118,9 @@ tag-version: check ## Generate container `latest` tag
 	fi; \
 	docker tag $(IMAGE) $(IMAGE):$$git_tag; \
 	echo "Tagged version $$git_tag"
+
+.PHONY: login
+login:
+	@docker login
 # HELPERS
 
